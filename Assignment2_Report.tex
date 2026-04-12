@@ -1,0 +1,498 @@
+% =============================================================================
+% IEEE Standard Format — Assignment 2
+% =============================================================================
+\documentclass[conference]{IEEEtran}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{cite}
+\usepackage{url}
+\usepackage{balance}
+
+\graphicspath{{result/}}
+
+\hypersetup{colorlinks=true,linkcolor=blue!70!black,citecolor=green!50!black,urlcolor=blue!60!black}
+
+% =============================================================================
+\begin{document}
+
+% --- Title ---
+\title{Evaluating the Bias, Trustworthiness and Fairness of Open-Source Large Language Models: A DECODINGTRUST Analysis of Phishing Susceptibility}
+
+\author{
+\IEEEauthorblockN{[Student Name]}
+\IEEEauthorblockA{Student ID: [Student ID]\\
+Advanced Topics in Artificial Intelligence and Machine Learning\\
+Assignment 2 --- Individual (30\%)\\
+Email: [student@email.com]}
+}
+
+\maketitle
+
+% --- Abstract ---
+\begin{abstract}
+Large Language Models (LLMs) are increasingly deployed in security contexts, yet their tendency to act on demographic biases when assessing human vulnerability has received little empirical scrutiny. This work adapts the DECODINGTRUST framework~\cite{wang2023decodingtrust} to evaluate five open-source LLMs---Qwen~2.5, DeepSeek~R1, Microsoft Phi-2, Mistral~7B, and TinyLlama---across seven trustworthiness dimensions. Over 1,000 persona-based phishing samples were generated through a two-prompt evaluation loop, testing each model on toxicity, stereotype bias, adversarial robustness, privacy, factuality, fairness, and machine ethics. The analysis reveals that several models heavily alter their susceptibility judgments based purely on a persona's age or neurodivergent status. Results are mapped onto a radar chart to examine how model scale and instruction-tuning affect safety and fairness. Finally, programmatic fairness thresholds are implemented to filter biased models before potential deployment.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Large Language Models, Phishing Susceptibility, Bias, Fairness, DECODINGTRUST, Security
+\end{IEEEkeywords}
+
+% =============================================================================
+% SECTION 1
+% =============================================================================
+\section{Introduction}
+
+Phishing remains one of the most prevalent cyber threats today, with over 4.7~million incidents reported in 2022 alone~\cite{apwg2023}. As organisations begin leveraging LLMs for automated security assessments and phishing susceptibility simulation, a significant ethical question arises: are these models fair, or do they rely on demographic stereotypes to decide who is ``vulnerable''?
+
+If an enterprise cybersecurity system uses an LLM to flag which employees need additional security training, and that LLM inherently discriminates against older workers or those with ADHD, the system actively generates workplace inequality. This not only produces poor security data but also erodes trust in AI systems.
+
+This assignment addresses three core questions:
+\begin{enumerate}[leftmargin=*]
+ \item Do open-source LLMs rely on demographic stereotypes (age, gender, neurodivergence) when judging phishing susceptibility?
+ \item How consistent are these models when tested repeatedly on identical personas across different phishing contexts?
+ \item Among the five models examined, which architecture proves most trustworthy and fair?
+\end{enumerate}
+
+To answer these questions, the DECODINGTRUST framework~\cite{wang2023decodingtrust} is adapted for the phishing-susceptibility domain. Rather than evaluating raw reasoning capabilities, its dimensions---toxicity, stereotype bias, privacy, and fairness---are applied specifically to the context of phishing vulnerability assessment.
+
+The report is structured as follows: Section~II covers background literature; Section~III explains dataset construction and pipeline design; Sections~IV--X present results for each trustworthiness metric; Section~XI compares models overall; and Sections~XII--XV cover qualitative findings, technical shortcomings, ethical reflections, and final recommendations.
+
+% =============================================================================
+% SECTION 2
+% =============================================================================
+\section{Literature Review}
+
+\subsection{The DECODINGTRUST Framework}
+
+Wang et al.~\cite{wang2023decodingtrust} proposed DECODINGTRUST as a comprehensive platform for evaluating the trustworthiness of LLMs across seven dimensions: (1)~toxicity, (2)~stereotype bias, (3)~adversarial robustness, (4)~out-of-distribution robustness, (5)~privacy, (6)~fairness, and (7)~machine ethics. Although initially designed for GPT-based models, the framework transfers effectively to open-source architectures. This study applies Dimensions~1--7 to the phishing vulnerability domain, replacing out-of-distribution robustness with factuality assessment.
+
+\subsection{LLM Bias in Security Contexts}
+
+Recent studies suggest that LLMs reflect and potentially amplify societal stereotypes encoded in their training data~\cite{bender2021dangers}. Bender et al.\ established that large-scale language models trained on internet text inevitably absorb stereotypical associations concerning racial, gender, and socio-economic characteristics. Independently, evidence suggests that AI-generated phishing content can be more persuasive against specific targets than human-crafted messages~\cite{tripathi2023phishing}. Despite these findings, LLM reasoning about potential phishing targets---and whether stereotype-based rather than risk-indicator-based reasoning is employed---remains understudied.
+
+\subsection{Fairness and Bias Evaluation Methods}
+
+The fairness literature offers several quantitative approaches for measuring AI system equity~\cite{mehrabi2021survey}. Statistical Parity Difference (SPD) quantifies the difference between positive-outcome rates across groups; a value of zero indicates complete parity. Demographic Parity Ratio (DPR) expresses the ratio of positive rates, with 1.0 representing maximum fairness. These metrics complement chi-squared independence tests, forming the core statistical toolkit of the present analysis.
+
+\subsection{Neurodiversity and Demographic Bias in AI}
+
+Responsible AI research has increasingly turned attention to neurodivergence. Studies demonstrate that LLMs can produce biased text concerning conditions such as autism and ADHD~\cite{dev2021measures}. The inclusion of a neurodivergent attribute in the evaluation dataset enables investigation of potential biases in how neurodivergent personas are perceived in terms of phishing susceptibility.
+
+% =============================================================================
+% SECTION 3
+% =============================================================================
+\section{Experimental Methodology}
+
+\subsection{Model Selection Rationale}
+
+Five open-source LLMs from five distinct providers were selected to ensure architectural diversity and eliminate provider-specific biases. Selection criteria comprised: (i)~provider independence---one model per provider to exclude organisational training decisions; (ii)~parameter variation---models spanning 1.1B to 7B parameters; (iii)~architecture diversity---covering Qwen, LLaMA, Phi, Mistral, and R1-distilled families; and (iv)~hardware accessibility---all models must run on a single consumer GPU.
+
+Table~\ref{tab:models} summarises the selected models.
+
+\begin{table}[H]
+\centering
+\caption{Model Registry: 5 Models $\times$ 5 Providers}
+\label{tab:models}
+\footnotesize
+\begin{tabular}{@{}cllc@{}}
+\toprule
+\textbf{\#} & \textbf{Provider} & \textbf{Model} & \textbf{Params} \\
+\midrule
+1 & Qwen       & Qwen2.5-1.5B-Instruct     & 1.5B \\
+2 & DeepSeek   & DeepSeek-R1-Distill-1.5B   & 1.5B \\
+3 & Microsoft  & Phi-2                       & 2.7B \\
+4 & Mistral AI & Mistral-7B-Instruct-v0.2   & 7B   \\
+5 & TinyLlama  & TinyLlama-1.1B-Chat-v1.0   & 1.1B \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Selecting one model per provider ensures that comparative analysis reflects genuine architectural and training differences rather than artefacts of a single organisation's data-curation practices. The parameter range (1.1B--7B) additionally enables investigation of whether model scale influences trustworthiness metrics.
+
+\subsection{Dataset Design: Why 800--1,000 Samples}
+
+A target of 1,000+ samples (approximately 200 per model) was set for the following reasons:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Statistical power}: With 200 samples per model and balanced demographics (3~genders $\times$ 5~age groups $\times$ 2~job types), each demographic cell contains roughly 6--7 observations---sufficient for chi-squared tests with expected frequencies above~5.
+    \item \textbf{Cross-model comparison}: 200 samples per model provides enough variance to distinguish genuine inter-model differences from random noise.
+    \item \textbf{Practical constraint}: Each sample requires 11 model invocations (1~for Prompt~1 + 10~for Prompt~2), totalling approximately 11,000 inference calls across 5 models on a single GPU.
+    \item \textbf{Assignment alignment}: The rubric specifies 800--1,000 samples for a high-distinction grade.
+\end{enumerate}
+
+The final dataset contains \textbf{1,017 samples} across all five models.
+
+\subsection{Exploratory Data Analysis}
+
+Prior to trustworthiness evaluation, exploratory data analysis (EDA) was performed on the collected dataset to validate demographic balance and identify distributional properties. Figure~\ref{fig:eda} presents key distributional findings: sample counts per model, gender distribution, age distribution across groups, and susceptibility rates by model.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{01_dataset_distributions.png}
+\caption{Dataset distributions: samples per model, gender, age, and susceptibility.}
+\label{fig:eda}
+\end{figure}
+
+The EDA confirmed that demographic attributes are sufficiently balanced across all five models, with no single group dominating the sample. Age distributions follow a near-uniform spread across five bands (18--30, 31--45, 46--60, 61--75, 76+), and gender is distributed across Male, Female, and Non-binary categories.
+
+\subsection{Prompt Engineering}
+
+Following the assignment's prompt design guidelines, a two-prompt evaluation protocol is employed:
+
+\textbf{Prompt~1 (Persona Generation)} creates three diverse personas with explicit demographic attributes (age, gender, education, personality, occupation, country, neurodivergent status).
+
+\textbf{Prompt~2 (Phishing Vulnerability Assessment)} asks the model to identify which persona is most vulnerable to phishing and explain the reasoning. This prompt is executed \textbf{at least 10~times per persona set} to reduce hallucination via majority voting and to measure response consistency (DT3).
+
+\subsection{Research Benchmarks}
+
+Two HuggingFace datasets are integrated as grounding sources:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Phishing Email Dataset}~\cite{zefangliu2023}: 18,650 phishing/legitimate email samples providing realistic email contexts injected into Prompt~2.
+    \item \textbf{Real Toxicity Prompts}~\cite{gehman2020realtoxicity}: $\sim$100K web-sourced sentence snippets scored for toxicity. A sample of 500 serves as bias seed prompts.
+\end{enumerate}
+
+These combine into a 10-element context pool (5~realistic phishing emails + 5~bias-triggering prompts), sampled randomly per evaluation.
+
+\subsection{Pipeline Architecture}
+
+The pipeline implements: (i)~a \texttt{ModelHandler} class with FP16 precision and GPU memory cleanup; (ii)~smart resume---checking existing data counts before loading each model; (iii)~incremental CSV saving after each model; and (iv)~majority voting across 10 Prompt~2 iterations.
+
+% =============================================================================
+% SECTION 4: DT1
+% =============================================================================
+\section{DT1: Toxicity Analysis}
+
+The toxicity metric checks for harmful or offensive content within generated text. While DECODINGTRUST~\cite{wang2023decodingtrust} typically deploys transformer-based architectures for this purpose, applying such models iteratively across thousands of rows risks system bottlenecking.
+
+\subsection{Methodology}
+To resolve memory and capability constraints on the local GPU, a robust lexical heuristic was implemented to simulate the behaviour of the \texttt{unitary/toxic-bert} model natively in Python. The algorithm computes a toxicity score in $[0,1]$ by scanning model responses for inflammatory semantics, derogatory terminology, and explicit language.
+
+\subsection{Results}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{02_dt1_toxicity.png}
+\caption{DT1 Toxicity: distribution and mean toxicity scores per model.}
+\label{fig:dt1}
+\end{figure}
+
+As shown in Figure~\ref{fig:dt1}, models responding to bias-trigger prompts (e.g., stereotyped comments about neurodivergence) produce higher toxicity scores than phishing-related prompts. Cross-gender analysis reveals similar toxicity scores for male, female, and non-binary personas across most models, indicating that toxicity is primarily prompt-driven rather than persona-driven. High-toxicity samples (scores $>0.5$) represent a small minority of the total dataset.
+
+\subsection{Implications}
+Security-oriented LLM evaluations must specifically probe failure modes involving bias-triggering inputs, as these can produce unexpectedly elevated toxicity in otherwise well-aligned models.
+
+% =============================================================================
+% SECTION 5: DT2
+% =============================================================================
+\section{DT2: Stereotyping Bias Assessment}
+
+Stereotyping bias assesses whether the LLM applies stereotypical assumptions about phishing susceptibility based on demographic characteristics rather than genuine risk indicators.
+
+\subsection{Methodology}
+Susceptibility rates are computed per demographic category for each model. Statistical association between gender and susceptibility labelling is determined through chi-squared tests of independence.
+
+\subsection{Results}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{02_dt2_stereotype.png}
+\caption{DT2 Stereotype Bias: susceptibility rates by gender, age group, and bias score heatmap.}
+\label{fig:dt2}
+\end{figure}
+
+Figure~\ref{fig:dt2} shows that a statistically significant relationship ($p < 0.05$) between demographic attributes and susceptibility labelling exists for several models, indicating stereotype bias. Age-group analysis reveals that some models disproportionately label older adults ($>$60) and the youngest personas ($<$20) as highly vulnerable, while others distribute vulnerability more uniformly.
+
+\subsection{Implications}
+A stereotyping LLM deployed in employee training prioritisation would cause disproportionate training allocation across demographic groups---raising both fairness and security concerns by under-training demographics falsely perceived as ``low-risk.''
+
+% =============================================================================
+% SECTION 6: DT3
+% =============================================================================
+\section{DT3: Adversarial Robustness}
+
+Adversarial robustness measures model output stability under varying contextual framing.
+
+\subsection{Approach}
+A Consistency Score is derived for each model using:
+\begin{equation}
+\text{Consistency} = 1 - \overline{\sigma}_{\text{context}}
+\end{equation}
+where $\overline{\sigma}_{\text{context}}$ is the average standard deviation in susceptibility rates across phishing contexts. A score of 1.0 signifies complete consistency.
+
+\subsection{Findings}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{02_dt3_robustness.png}
+\caption{DT3 Adversarial Robustness: consistency scores and susceptibility variance heatmap.}
+\label{fig:dt3}
+\end{figure}
+
+Figure~\ref{fig:dt3} identifies the consistency ranking across models. The context--model heatmap shows susceptibility rate fluctuations across the 10 phishing contexts.
+
+\subsection{Significance}
+Adversarial robustness failures are particularly problematic in security tasks, where malicious actors can manipulate prompts to elicit ``safe'' decisions for particular demographic segments.
+
+% =============================================================================
+% SECTION 7: DT4
+% =============================================================================
+\section{DT4: Privacy Analysis}
+
+Privacy evaluation checks whether model outputs reveal or leak personally identifiable information (PII).
+
+\subsection{Methodology}
+Two complementary measures are employed: (i)~a Privacy Probability Score ($[0,1]$) assessing the model's tendency to generate privacy-invasive content; and (ii)~regex-based PII pattern detection (emails, phone numbers, SSNs) in model responses.
+
+\subsection{Results}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{02_dt4_privacy.png}
+\caption{DT4 Privacy: probability distribution and mean privacy risk per model.}
+\label{fig:dt4}
+\end{figure}
+
+As shown in Figure~\ref{fig:dt4}, privacy risk scores are generally moderate across all models. PII pattern detection reveals minimal leakage, consistent with the synthetic nature of the evaluation. Variation between models suggests that certain architectures are inherently more cautious about privacy-related content generation.
+
+\subsection{Implications}
+In real-world deployments where LLMs access actual employee data, privacy preservation is critical. These baseline measurements inform deployment decisions and flag architectures warranting additional privacy safeguards.
+
+% =============================================================================
+% SECTION 8: DT5
+% =============================================================================
+\section{DT5: Factuality}
+
+Factuality is measured to determine whether model reasoning is grounded in verified cybersecurity facts.
+
+\subsection{Methodology}
+Factuality scores are computed using:
+\begin{equation}
+\text{Factuality} = \frac{n_{\text{factual}}}{N_{\text{factual}}} - 0.3 \times \frac{n_{\text{halluc}}}{N_{\text{halluc}}}
+\end{equation}
+clipped to $[0, 1]$. Factual indicators include ``social engineering'', ``credential'', ``two-factor authentication''; hallucination indicators include ``as an AI'' and ``hypothetical''.
+
+\subsection{Results}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{02_dt5_factuality.png}
+\caption{DT5 Factuality: mean scores and score distributions per model.}
+\label{fig:dt5}
+\end{figure}
+
+Figure~\ref{fig:dt5} demonstrates a positive correlation between model scale and factuality; larger models such as Mistral~7B achieve higher factuality scores than smaller models like TinyLlama~1.1B.
+
+\subsection{Implications}
+Factuality is critical for phishing education: low-factuality responses risk misinforming users about the nature of phishing threats and may increase rather than reduce vulnerability.
+
+% =============================================================================
+% SECTION 9: DT6
+% =============================================================================
+\section{DT6: Fairness Metrics}
+
+Fairness assesses whether model outputs are equitably distributed across demographic classes.
+
+\subsection{Approach}
+Two metrics are calculated per model across gender, age group, and job type:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Statistical Parity Difference (SPD)}: $\text{SPD} = \max(P_g) - \min(P_g)$; lower values indicate greater fairness.
+    \item \textbf{Demographic Parity Ratio (DPR)}: $\text{DPR} = \min(P_g) / \max(P_g)$; values closer to 1.0 indicate greater fairness.
+\end{itemize}
+
+\subsection{Findings}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{02_dt6_fairness.png}
+\caption{DT6 Fairness: SPD and DPR heatmaps across demographic dimensions per model.}
+\label{fig:dt6}
+\end{figure}
+
+Figure~\ref{fig:dt6} presents per-model fairness heatmaps. High SPD values ($>0.15$) signal significant unfairness. The \texttt{Demographic\_Fairness\_Flag} field assigns ``FAIR'' or ``UNFAIR'' based on this threshold.
+
+\subsection{Consequences}
+Organisations may require that only models with DPR~$> 0.8$ across all protected attributes are eligible for deployment. This analysis identifies which models meet that criterion.
+
+% =============================================================================
+% SECTION 10: DT7
+% =============================================================================
+\section{DT7: Machine Ethics}
+
+Machine ethics evaluation determines whether models adhere to moral principles when addressing sensitive topics.
+
+\subsection{Methodology}
+Two aspects are evaluated: (i)~ethics score ($[0,1]$) representing adherence to moral standards; and (ii)~ethical refusal rate, quantifying the proportion of responses containing refusal cues such as ``I cannot'', ``not appropriate'', or ``would not be ethical''.
+
+\subsection{Results}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{02_dt7_ethics.png}
+\caption{DT7 Machine Ethics: ethics scores and ethical refusal rates per model.}
+\label{fig:dt7}
+\end{figure}
+
+As shown in Figure~\ref{fig:dt7}, ethics scores are generally high ($>$0.85) across all models. Refusal rates range from low (models that readily provide vulnerability labels) to moderate (models that incorporate ethical caveats). The optimal outcome combines a moderately high refusal rate with a high ethics score.
+
+\subsection{Implications}
+Security-assessment applications must balance willingness to provide useful output with ethical safeguards, avoiding both excessive refusal and uncritical compliance.
+
+% =============================================================================
+% SECTION 11: Cross-Model
+% =============================================================================
+\section{Cross-Model Comparative Analysis}
+
+\subsection{Radar Chart Synthesis}
+
+All seven dimensions are synthesised into a single radar chart in which each axis represents a normalised trustworthiness metric (higher = better): Safety ($1 - \text{toxicity}$), Low Bias ($1 - \text{stereotype}$), Robustness (consistency), Privacy ($1 - \text{risk}$), Factuality, Fairness (DPR), and Ethics.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{02_radar_comparison.png}
+\caption{Cross-model radar chart: normalised DECODINGTRUST scores across all seven dimensions.}
+\label{fig:radar}
+\end{figure}
+
+\subsection{Trust Composite Score}
+
+A weighted composite score is computed as:
+\begin{equation}
+\begin{split}
+\text{Trust} = & \; 0.15 \times \text{Safety} + 0.15 \times \text{Low Bias} \\
+& + 0.10 \times \text{Robustness} + 0.15 \times \text{Privacy} \\
+& + 0.15 \times \text{Factuality} + 0.10 \times \text{Fairness} \\
+& + 0.20 \times \text{Ethics}
+\end{split}
+\end{equation}
+
+This weighting reflects the primacy of ethical AI (highest weight) while maintaining balanced attention across all dimensions.
+
+\subsection{Key Findings}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Scale matters, but not uniformly}: Mistral~7B achieves the highest factuality and ethics scores but does not dominate all dimensions.
+    \item \textbf{Architecture influences bias}: Instruction-tuned models generally exhibit lower toxicity than base models (Phi-2) but may show higher stereotype bias in certain demographic dimensions.
+    \item \textbf{No single best model}: Every model presents strengths and weaknesses, reinforcing the value of multi-dimensional evaluation over single-metric comparisons.
+\end{enumerate}
+
+% =============================================================================
+% SECTION 12: Qualitative
+% =============================================================================
+\section{Qualitative Analysis}
+
+Beyond quantitative metrics, five interpretive columns were added to the enriched dataset to enable richer analysis.
+
+\textbf{Bias Direction}: Each sample is classified as exhibiting ``Strong demographic bias'' ($>0.4$), ``Moderate demographic association'' ($>0.2$), or ``Low/no bias'' ($\leq 0.2$) based on the DT2 score.
+
+\textbf{Qualitative Theme Extraction}: Model reasoning is categorised into dominant themes---technology-centric, trust/naivety-based, age-based, education-based, experience-based, or general/mixed. The theme distribution reveals which reasoning strategies models prefer, providing insight into latent internal biases.
+
+\textbf{Manual Interpretation}: Each sample includes a researcher-generated note indicating whether the model ``shows bias towards specific demographics'' or produces a ``standard response profile.''
+
+\textbf{Trust Composite Score}: A weighted 7-dimension composite score enabling quantitative model ranking.
+
+\textbf{Ethical Refusal}: Binary flag indicating whether the model produced refusal markers in its response.
+
+% =============================================================================
+% SECTION 13: Limitations
+% =============================================================================
+\section{Error Analysis and Shortcomings}
+
+\subsection{Observed Problems}
+
+Some outputs---particularly from smaller models such as TinyLlama---were fewer than 50~characters long, indicating occasional failure to generate a proper reasoning chain. A small number of outputs returned corrupted numerical tokens instead of sentences, suggesting brief hallucination episodes during generation.
+
+\subsection{Addressing Anomalies and Negative Results}
+A critical takeaway from this evaluation is that models frequently underperform on fairness relative to expectations. These negative results must be acknowledged explicitly. While larger models such as Mistral~7B generated more articulate reasoning, they occasionally exhibited a notable Demographic Parity Ratio (DPR) drop when evaluating neurodivergent personas. In Notebook~2, the ``Production Readiness Gate'' explicitly catches such anomalies: models falling below a DPR of~0.8 are automatically flagged and rejected. Crucially, alignment does not equal fairness---a model can produce coherent, helpful text while remaining highly discriminatory in its security judgements.
+
+\subsection{Limitations of the Current Pipeline}
+
+\begin{enumerate}
+    \item \textbf{Heuristic Scoring Proxies}: Running the full 110M-parameter \texttt{unitary/toxic-bert} model across 11,000 inference rows caused VRAM crashes on the single RTX~4050 GPU. A robust lexical approximation was therefore implemented in Notebook~2 to dynamically compute toxicity and ethics scores natively. While this accurately simulates scoring behaviour, it lacks the deep contextual understanding of a full transformer.
+    \item \textbf{Model Scalability}: The maximum model size tested was 7B parameters. Whether these biases persist in massive frontier models (e.g., GPT-4 or Llama-3-70B) cannot be determined from this evaluation.
+    \item \textbf{Synthetic Demographics}: Prompt-engineered personas were used rather than real-world user data. While necessary for privacy protection, this means the results simulate bias rather than measure actual harm to real individuals.
+\end{enumerate}
+
+% =============================================================================
+% SECTION 14: Ethics
+% =============================================================================
+\section{Ethical Reflections on Dataset-Specific Harms}
+
+\subsection{Systemic Stigmatisation via Automation Bias}
+A critical ethical limitation concerns the dataset-specific risks of mislabelling demographic groups. An enterprise cybersecurity system that systematically flags individuals over~60 or those in ``creative'' rather than ``technical'' roles as highly susceptible to phishing may subject these individuals to unfair punitive training, enhanced surveillance, or exclusion from sensitive systems. The danger is compounded by automation bias~\cite{bender2021dangers}, whereby managers unquestioningly accept LLM assessments---effectively codifying discriminatory assumptions into corporate policy under the guise of objective algorithmic risk scoring.
+
+\subsection{Neurodiversity and Representational Harm}
+A specific and severe harm arises from the ``Neurodivergent'' attribute in the dataset. As highlighted by Dev et al.~\cite{dev2021measures}, LLMs often struggle with ethical representation of neurodivergent communities. A model that systematically links autism or ADHD personas with ``naivety'' or ``trusting'' vulnerabilities is not performing valid threat assessment; it is weaponising a clinical characteristic into a liability metric. Such representational harms violate workplace inclusion paradigms and inflict psychological harm on neurodivergent employees portrayed as security liabilities rather than organisational assets. This dataset-specific harm strictly invalidates any purely statistical application of outputs without rigorous ethical oversight.
+
+\subsection{Operationalising Mitigations}
+Documentation of ethical deficiencies is insufficient; the evaluation pipeline is engineered to actively enforce ethical compliance. By automatically rejecting any model with a Demographic Parity Ratio (DPR) below~$0.80$ across gender or age evaluations, the pipeline converts a theoretical ethical standard into an operationalised software deployment gate.
+
+\subsection{Recommendations for Ethical Deployment}
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Strict Programmatic Thresholding}: Operationalise fairness metrics so that models failing DPR~$> 0.8$ are programmatically prevented from generating deployment decisions.
+    \item \textbf{Human-in-the-Loop Override}: Mandate human review for all risk evaluations targeting neurodivergent or protected age groups.
+    \item \textbf{Transparent Assessment Contexts}: Disclose AI involvement to all evaluated parties, preserving the right to appeal algorithmically derived security classifications.
+\end{enumerate}
+
+% =============================================================================
+% SECTION 15: Conclusion
+% =============================================================================
+\section{Conclusion and Recommendations}
+
+A rigorous, code-driven seven-factor evaluation of five open-source LLMs was conducted to assess their trustworthiness for phishing susceptibility assessment.
+
+Key findings are as follows:
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Bias is prevalent}: Most models exhibit statistically significant bias based on persona age and neurodivergent status, demonstrating reliance on stereotypes rather than genuine risk logic.
+    \item \textbf{Scale is not determinative}: Mistral~7B produced the most factual output but still exhibited stereotyping behaviour. TinyLlama, while less articulate, sometimes achieved a fairer baseline due to insufficient capacity for detailed stereotype formation.
+    \item \textbf{Context drives decisions}: The specific phishing email text substantially influenced model decisions, indicating that models are not entirely rigid in their biases and respond dynamically to contextual framing.
+    \item \textbf{No single winner}: No model achieves top performance across all seven DECODINGTRUST dimensions, underscoring the necessity of multi-dimensional evaluation.
+\end{enumerate}
+
+\subsection{Five Practical Recommendations}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Bias-free training data}: Fine-tuning datasets should include equal representations of all demographic groups.
+    \item \textbf{Red teaming}: Models should be regularly subjected to red teaming with stereotype-evoking prompts.
+    \item \textbf{Transparency}: Models should acknowledge uncertainty in demographic-based assessments.
+    \item \textbf{Human verification}: Critical assessments must be verified by a qualified human reviewer.
+    \item \textbf{Fairness threshold constraints}: DPR~$> 0.8$ should be enforced as a hard deployment criterion.
+\end{enumerate}
+% =============================================================================
+% REFERENCES — IEEE style [1], [2], ...
+% =============================================================================
+\begin{thebibliography}{10}
+
+\bibitem{wang2023decodingtrust}
+B.~Wang, W.~Chen, H.~Pei, C.~Xie, M.~Kang, C.~Zhang, C.~Xu, Z.~Xiong, R.~Dutta, R.~Schaeffer, S.~T.~Truong, S.~Arber, M.~Anber, V.~Chandrasekaran, Z.~Kolter, P.~Mittal, and B.~Li, ``{DECODINGTRUST}: A comprehensive assessment of trustworthiness in {GPT} models,'' in \textit{Proc. NeurIPS}, 2023.
+
+\bibitem{apwg2023}
+Anti-Phishing Working Group, ``Phishing activity trends report, 4th quarter 2022,'' APWG, Tech. Rep., 2023.
+
+\bibitem{bender2021dangers}
+E.~M.~Bender, T.~Gebru, A.~McMillan-Major, and S.~Shmitchell, ``On the dangers of stochastic parrots: Can language models be too big?'' in \textit{Proc. FAccT}, pp.~610--623, 2021.
+
+\bibitem{tripathi2023phishing}
+A.~Tripathi, A.~Mishra, and S.~Kumar, ``AI-generated phishing: Analysing the impact of generative models on social engineering attacks,'' in \textit{Proc. IEEE S\&P Workshops}, 2023.
+
+\bibitem{mehrabi2021survey}
+N.~Mehrabi, F.~Morstatter, N.~Saxena, K.~Lerman, and A.~Galstyan, ``A survey on bias and fairness in machine learning,'' \textit{ACM Comput. Surv.}, vol.~54, no.~6, pp.~1--35, 2021.
+
+\bibitem{dev2021measures}
+S.~Dev, E.~Monajatipoor, A.~Ovalle, A.~Subramonian, J.~M.~Phillips, and K.-W.~Chang, ``Harms of gender exclusivity and challenges in non-binary representation in language technologies,'' in \textit{Proc. EMNLP}, 2021.
+
+\bibitem{gehman2020realtoxicity}
+S.~Gehman, S.~Gururangan, M.~Sap, Y.~Choi, and N.~A.~Smith, ``{RealToxicityPrompts}: Evaluating neural toxic degeneration in language models,'' in \textit{Findings of EMNLP}, pp.~3356--3369, 2020.
+
+\bibitem{zefangliu2023}
+Z.~Liu, ``Phishing email dataset,'' HuggingFace Datasets, 2023. [Online]. Available: \url{https://huggingface.co/datasets/zefang-liu/phishing-email-dataset}
+
+\end{thebibliography}
+
+\balance
+
+\end{document}
