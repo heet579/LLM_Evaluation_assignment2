@@ -52,7 +52,7 @@ Large Language Models, Phishing Susceptibility, Bias, Fairness, DECODINGTRUST, S
 % =============================================================================
 \section{Introduction}
 
-Phishing continues to be among the leading cyber threats, with 4.7~million attacks recorded during 2022 alone~\cite{apwg2023}. Recent advances in generative AI have further complicated this landscape, enabling automated social engineering at scale~\cite{tripathi2023phishing, perez2022red}. As firms start to adopt LLMs to automate security evaluations and assess phishing vulnerability~\cite{bommasani2021opportunities}, a key ethical dilemma emerges: are these systems unbiased, or do they depend on stereotyping based on demographic factors to determine vulnerability?
+Phishing continues to be among the leading cyber threats, with 4.7~million attacks recorded during 2022 alone~\cite{apwg2022}. Recent advances in generative AI have further complicated this landscape, enabling automated social engineering at scale. As firms start to adopt LLMs to automate security evaluations and assess phishing vulnerability~\cite{bommasani2021opportunities}, a key ethical dilemma emerges: are these systems unbiased, or do they depend on stereotyping based on demographic factors to determine vulnerability?
 
 A firm cybersecurity platform powered by an LLM may discriminate against certain groups of workers, e.g., older employees and people with ADHD, thus discriminating against them. Such an action will lead to the creation of workplace disparity while collecting inaccurate security data.
 
@@ -75,17 +75,17 @@ The paper is organized as follows: In Section~II, literature background is provi
 
 \subsection{The DECODINGTRUST Framework}
 
-DECODINGTRUST is an evaluation framework introduced by Wang et al.~\cite{wang2023decodingtrust} in order to assess the trustworthiness of LLMs based on seven aspects including: (1) toxicity, (2) stereotype bias, (3) adversarial robustness, (4) out-of-distribution robustness, (5) privacy, (6) fairness, and (7) machine ethics. While developed originally for GPT-based models, the evaluation framework can be easily extended to open-source models, providing a holistic view of model risks~\cite{liang2022holistic}. The present study
+DECODINGTRUST is an evaluation framework introduced by Wang et al.~\cite{wang2023decodingtrust} in order to assess the trustworthiness of LLMs based on seven aspects including: (1) toxicity, (2) stereotype bias, (3) adversarial robustness, (4) out-of-distribution robustness, (5) privacy, (6) fairness, and (7) machine ethics. While developed originally for GPT-based models, the evaluation framework can be easily extended to open-source models, providing a holistic view of model risks. The present study
 
 \subsection{LLM Bias in Security Contexts}
-Some recent work indicates that LLMs carry and even reinforce the societal stereotypes that are built into their datasets~\cite{bender2021dangers, bolukbasi2016man}. Bender et al.\ showed that large-scale language models trained using internet texts cannot help but pick up stereotypical relationships related to race, gender, and socio-economic status~\cite{zhao2019gender}. Meanwhile, there is evidence that phishing material created by AI is more convincing when targeting particular individuals than material written by humans~\cite{tripathi2023phishing}. Nevertheless, how LLMs reason about possible targets for phishing attacks remains relatively unexplored territory.
+Some recent work indicates that LLMs carry and even reinforce the societal stereotypes that are built into their datasets~\cite{bender2021dangers}. Bender et al.\ showed that large-scale language models trained using internet texts cannot help but pick up stereotypical relationships related to race, gender, and socio-economic status~\cite{bender2021dangers}. Meanwhile, there is evidence that phishing material created by AI is more convincing when targeting particular individuals than material written by humans. Nevertheless, how LLMs reason about possible targets for phishing attacks remains relatively unexplored territory.
 
 \subsection{Fairness and Bias Evaluation Methods}
-Several methods have been provided to measure AI system fairness in the existing fairness literature~\cite{mehrabi2021survey}. Key frameworks like Fairness Through Awareness~\cite{dwork2012fairness} and Equality of Opportunity~\cite{hardt2016equality} provide the mathematical basis for these assessments. SPD refers to the metric that compares the positive outcomes between two groups. If this metric takes a value of zero, this means that total parity has been achieved. DPR measures the ratio between positive outcomes, where a value of one is used to show maximum fairness.
+Several methods have been provided to measure AI system fairness in the existing fairness literature~\cite{mehrabi2021survey}. Key frameworks like Fairness Through Awareness and Equality of Opportunity provide the mathematical basis for these assessments. SPD refers to the metric that compares the positive outcomes between two groups. If this metric takes a value of zero, this means that total parity has been achieved. DPR measures the ratio between positive outcomes, where a value of one is used to show maximum fairness.
 
 \subsection{Neurodiversity and Demographic Bias in AI}
 
-Research in responsible AI has begun to focus on neurodiversity. Research shows that LLMs can generate biased texts regarding diseases such as autism and ADHD~\cite{dev2021measures}. By including neurodiverse as one of the attributes in the data set used for evaluation, we can study any possible bias in the way neurodiverse persons are viewed in regards to phishing.
+Research in responsible AI has begun to focus on neurodiversity. Research shows that LLMs can generate biased texts regarding diseases such as autism and ADHD~\cite{dev2021measures, sun2019mitigating}. By including neurodiverse as one of the attributes in the data set used for evaluation, we can study any possible bias in the way neurodiverse persons are viewed in regards to phishing.
 % =============================================================================
 % SECTION 3
 % =============================================================================
@@ -94,7 +94,7 @@ Research in responsible AI has begun to focus on neurodiversity. Research shows 
 \subsection{Model Selection Rationale}
 Five different LLMs from five different vendors were chosen to provide diversity in architecture and avoid vendor bias. The criteria considered were: (i)~vendor independence---only one model from each vendor, to avoid any organizational training biases; (ii)~parameter diversity---models having parameter size between 1.1B and 7B; (iii)~architectural diversity---models belonging to Qwen, LLaMA, Phi, Mistral, and R1 distilled architectures; and (iv)~hardware requirements---models which can run on a single
 
-Table~\ref{tab:models} summarises the selected models, representing major breakthroughs in open-source AI including Mistral~\cite{mistral2023}, Phi-2~\cite{phi2023}, Qwen~\cite{qwen2024}, Llama-2~\cite{touvron2023llama}, and DeepSeek~\cite{deepseekr1_2025} architectures.
+Table~\ref{tab:models} summarises the selected models, representing major breakthroughs in open-source AI including Mistral, Phi-2, Qwen, Llama-2~\cite{touvron2023llama}, and DeepSeek architectures.
 
 \begin{table}[H]
 \centering
@@ -270,7 +270,7 @@ We used two ways to see if there were any privacy problems:
 \label{fig:dt4}
 \end{figure}
 
-If we look at Figure~\ref{fig:dt4} we can see that the models do not often give away information. We did not find any information in what the models said, which is what we expected since we used fake data to test them. However, researchers have shown that LLMs can inadvertently leak training data through membership inference and other attacks~\cite{carlini2021extracting}. We did see that some models are better at keeping things private than others.
+If we look at Figure~\ref{fig:dt4} we can see that the models do not often give away information. We did not find any information in what the models said, which is what we expected since we used fake data to test them. However, researchers have shown that LLMs can inadvertently leak training data through membership inference and other attacks. We did see that some models are better at keeping things private than others.
 
 \subsection{Implications}
 
@@ -287,7 +287,7 @@ Factuality scores are computed using:
 \begin{equation}
 \text{Factuality} = \frac{n_{\text{factual}}}{N_{\text{factual}}} - 0.3 \times \frac{n_{\text{halluc}}}{N_{\text{halluc}}}
 \end{equation}
-clipped to $[0, 1]$. Factual indicators include ``social engineering'', ``credential'', ``two-factor authentication''; hallucination indicators include ``as an AI'' and ``hypothetical''. These metrics align with contemporary research into LLM factual consistency~\cite{hofmann2024hallucination}.
+clipped to $[0, 1]$. Factual indicators include ``social engineering'', ``credential'', ``two-factor authentication''; hallucination indicators include ``as an AI'' and ``hypothetical''. These metrics align with contemporary research into LLM factual consistency.
 
 \subsection{Results}
 \begin{figure}[H]
@@ -442,7 +442,7 @@ The main discovery from this assessment shows that models tend to perform less e
 \section{Dataset-Specific Ethical Considerations Regarding Potential Harms}
 
 \subsection{Systematized Discrimination through Automation Bias}
-One ethical problem here is associated with potential harm to people from erroneous demographic labeling in the dataset. An automated system for corporate cybersecurity that treats everyone over age 60 or anyone involved in creative rather than technical work as prone to phishing attacks would unfairly punish such individuals by putting them into more extensive training programs or denying access to sensitive information and technology~\cite{ferrara2023should}. Moreover, the problem is exacerbated by automation bias~\cite{bender2021dangers} since management simply accepts the conclusions made by LLMs without any questioning.
+One ethical problem here is associated with potential harm to people from erroneous demographic labeling in the dataset. An automated system for corporate cybersecurity that treats everyone over age 60 or anyone involved in creative rather than technical work as prone to phishing attacks would unfairly punish such individuals by putting them into more extensive training programs or denying access to sensitive information and technology. Moreover, the problem is exacerbated by automation bias~\cite{bender2021dangers} since management simply accepts the conclusions made by LLMs without any questioning.
 
 \subsection{Neurodiversity and Representational Harm}
 A distinct and serious harm comes about because of the ``Neurodivergent'' variable in the data set. According to Dev et al.~\cite{dev2021measures}, ethical misrepresentations of neurodivergent groups often appear in LLMs. An LLM which consistently associates neurodivergent individuals, such as those with autism and/or ADHD, with vulnerabilities like ``naivety'' and ``trusting'' cannot be accurately making an assessment but is, instead, weaponising their condition into one of vulnerability. Ethical representation harms run counter to workplace inclusion frameworks and psychologically hurt neurodivergent employees who have been turned into threats to security rather than assets. Ethical issues are not theoretical concerns when they relate specifically to a dataset; there is no statistical validity when ethics are not considered.
@@ -484,79 +484,34 @@ Main conclusions include the following:
 % =============================================================================
 % REFERENCES — IEEE style [1], [2], ...
 % =============================================================================
-\begin{thebibliography}{10}
+\begin{thebibliography}{9}
 
 \bibitem{wang2023decodingtrust}
-B.~Wang, W.~Chen, H.~Pei, C.~Xie, M.~Kang, C.~Zhang, C.~Xu, Z.~Xiong, R.~Dutta, R.~Schaeffer, S.~T.~Truong, S.~Arber, M.~Anber, V.~Chandrasekaran, Z.~Kolter, P.~Mittal, and B.~Li, ``{DECODINGTRUST}: A comprehensive assessment of trustworthiness in {GPT} models,'' in \textit{Proc. NeurIPS}, 2023.
-
-\bibitem{apwg2023}
-Anti-Phishing Working Group, ``Phishing activity trends report, 4th quarter 2022,'' APWG, Tech. Rep., 2023.
+Wang, B. et al. (2023). DECODINGTRUST: A Comprehensive Assessment of Trustworthiness in GPT Models. NeurIPS 2023.
 
 \bibitem{bender2021dangers}
-E.~M.~Bender, T.~Gebru, A.~McMillan-Major, and S.~Shmitchell, ``On the dangers of stochastic parrots: Can language models be too big?'' in \textit{Proc. FAccT}, pp.~610--623, 2021.
-
-\bibitem{tripathi2023phishing}
-A.~Tripathi, A.~Mishra, and S.~Kumar, ``AI-generated phishing: Analysing the impact of generative models on social engineering attacks,'' in \textit{Proc. IEEE S\&P Workshops}, 2023.
+Bender, E. M. et al. (2021). On the Dangers of Stochastic Parrots: Can Language Models Be Too Big? FAccT 2021, pp. 610–623.
 
 \bibitem{mehrabi2021survey}
-N.~Mehrabi, F.~Morstatter, N.~Saxena, K.~Lerman, and A.~Galstyan, ``A survey on bias and fairness in machine learning,'' \textit{ACM Comput. Surv.}, vol.~54, no.~6, pp.~1--35, 2021.
+Mehrabi, N. et al. (2021). A Survey on Bias and Fairness in Machine Learning. ACM Computing Surveys, 54(6), 1–35.
 
 \bibitem{dev2021measures}
-S.~Dev, E.~Monajatipoor, A.~Ovalle, A.~Subramonian, J.~M.~Phillips, and K.-W.~Chang, ``Harms of gender exclusivity and challenges in non-binary representation in language technologies,'' in \textit{Proc. EMNLP}, 2021.
+Dev, S. et al. (2021). Harms of Gender Exclusivity and Challenges in Non-binary Representation in Language Technology. EMNLP 2021.
 
-\bibitem{gehman2020realtoxicity}
-S.~Gehman, S.~Gururangan, M.~Sap, Y.~Choi, and N.~A.~Smith, ``{RealToxicityPrompts}: Evaluating neural toxic degeneration in language models,'' in \textit{Findings of EMNLP}, pp.~3356--3369, 2020.
-
-\bibitem{zefangliu2023}
-Z.~Liu, ``Phishing email dataset,'' HuggingFace Datasets, 2023. [Online]. Available: \url{https://huggingface.co/datasets/zefang-liu/phishing-email-dataset}
-
-\bibitem{dwork2012fairness}
-C.~Dwork, M.~Hardt, T.~Pitassi, O.~Reingold, and R.~Zemel, ``Fairness through awareness,'' in \textit{Proc. ITCS}, 2012.
-
-\bibitem{hardt2016equality}
-M.~Hardt, E.~Price, and N.~Srebro, ``Equality of opportunity in supervised learning,'' in \textit{Proc. NeurIPS}, 2016.
-
-\bibitem{bolukbasi2016man}
-T.~Bolukbasi, K.~W.~Chang, J.~Y.~Zou, V.~Saligrama, and A.~T.~Kalai, ``Man is to computer programmer as woman is to homemaker? Debiasing word embeddings,'' in \textit{Proc. NeurIPS}, 2016.
-
-\bibitem{zhao2019gender}
-J.~Zhao, T.~Wang, M.~Yatskar, R.~Ordonez, and K.~W.~Chang, ``Gender bias in contextualized word embeddings,'' in \textit{Proc. NAACL-HLT}, 2019.
-
-\bibitem{liang2022holistic}
-P.~Liang et al., ``Holistic evaluation of language models,'' \textit{arXiv preprint arXiv:2211.09110}, 2022.
-
-\bibitem{perez2022red}
-E.~Perez et al., ``Red teaming language models with language models,'' \textit{arXiv preprint arXiv:2202.03286}, 2022.
-
-\bibitem{carlini2021extracting}
-N.~Carlini et al., ``Extracting training data from large language models,'' in \textit{Proc. USENIX Security}, 2021.
-
-\bibitem{ferrara2023should}
-E.~Ferrara, ``Should ChatGPT be biased? Challenges and risks of bias in large language models,'' \textit{First Monday}, vol.~28, no.~11, 2023.
+\bibitem{sun2019mitigating}
+Sun, T. et al. (2019). Mitigating Gender Bias in Natural Language Processing: Literature Review. ACL 2019.
 
 \bibitem{bommasani2021opportunities}
-R.~Bommasani et al., ``On the opportunities and risks of foundation models,'' \textit{arXiv preprint arXiv:2108.07258}, 2021.
+Bommasani, R. et al. (2021). On the Opportunities and Risks of Foundation Models. Stanford CRFM Technical Report.
 
-\bibitem{mistral2023}
-A.~Jiang et al., ``Mistral 7B,'' \textit{arXiv preprint arXiv:2310.06825}, 2023.
-
-\bibitem{phi2023}
-S.~Gunasekar et al., ``Textbooks are all you need,'' \textit{arXiv preprint arXiv:2306.11644}, 2023.
-
-\bibitem{qwen2024}
-Qwen Team, ``Qwen2 technical report,'' \textit{arXiv preprint arXiv:2407.10671}, 2024.
-
-\bibitem{deepseekr1_2025}
-DeepSeek-AI, ``DeepSeek-R1: Incentivizing reasoning capability in LLMs via reinforcement learning,'' \textit{arXiv preprint arXiv:2501.12948}, 2025.
+\bibitem{apwg2022}
+APWG (2022). Phishing Activity Trends Report Q4 2022. Anti-Phishing Working Group.
 
 \bibitem{touvron2023llama}
-H.~Touvron et al., ``Llama 2: Open foundation and fine-tuned chat models,'' \textit{arXiv preprint arXiv:2307.09288}, 2023.
-
-\bibitem{hofmann2024hallucination}
-V.~Hofmann et al., ``AI hallucinations and the path to factuality,'' \textit{Nature Machine Intelligence}, 2024.
+Touvron, H. et al. (2023). LLaMA: Open and Efficient Foundation Language Models. arXiv:2302.13971.
 
 \bibitem{sarker2023personalized}
-O.~Sarker, S.~Haggag, A.~Jayatilaka, and C.~Liu, ``Personalized guidelines for design, implementation and evaluation of anti-phishing interventions,'' University of Adelaide / Cyber Security CRC, \textit{arXiv preprint arXiv:2311.12827}, 2023.
+Sarker, O., Haggag, S., Jayatilaka, A., and Liu, C. (2023). Personalized Guidelines for Design, Implementation and Evaluation of Anti-Phishing Interventions. University of Adelaide / Cyber Security CRC. arXiv:2311.12827.
 
 \end{thebibliography}
 
